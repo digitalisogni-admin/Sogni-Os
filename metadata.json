@@ -1,0 +1,5 @@
+{
+  "name": "Sogni CRM",
+  "description": "The ultimate agency operating system and mission control for agency admins.",
+  "requestFramePermissions": ["camera", "microphone", "geolocation"]
+}

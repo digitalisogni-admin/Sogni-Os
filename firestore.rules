@@ -1,0 +1,310 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: userId (Firebase Auth UID)
+    // Fields:
+    //   - displayName: string (optional)
+    //   - email: string (required, email format)
+    //   - photoURL: string (optional, URL format)
+    //   - role: string (required, 'admin' | 'affiliate')
+    //   - theme: string (optional, 'light' | 'dark')
+    //   - webhooks: map (optional)
+    //
+    // Collection: leads
+    // Document ID: leadId
+    // Fields:
+    //   - name: string (required)
+    //   - company: string (optional)
+    //   - email: string (required, email format)
+    //   - status: string (required, enum)
+    //   - value: number (optional)
+    //   - lastContacted: string (optional, date format)
+    //   - avatar: string (optional, URL format)
+    //   - uid: string (required, owner UID)
+    //
+    // [Tasks and Products follow similar ownership patterns]
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.uid;
+    }
+
+    function uidUnchanged() {
+      return !('uid' in request.resource.data) || request.resource.data.uid == request.auth.uid;
+    }
+
+    function uidNotModified() {
+      return !('uid' in request.resource.data) || request.resource.data.uid == resource.data.uid;
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidUrl(url) {
+      return url is string && (url.matches("^https://.*") || url.matches("^http://.*"));
+    }
+
+    function isSuperAdmin() {
+      return isAuthenticated() && request.auth.token.email == "digitalisogni@gmail.com";
+    }
+
+    function isSystemWrite() {
+      return request.resource.data.get('_sys_secret', '') == 'SOGNI_SYS_SECRET_BA91';
+    }
+
+    function isAdmin() {
+      return isSuperAdmin() || (
+        isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', 'affiliate') in ['admin', 'superadmin']
+      );
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['email', 'role']) &&
+             isValidEmail(data.email) &&
+             data.role in ['superadmin', 'admin', 'affiliate'] &&
+             (!('theme' in data) || data.theme in ['light', 'dark']) &&
+             (!('status' in data) || data.status in ['active', 'pending', 'suspended']);
+    }
+
+    function isValidLead(data) {
+      return data.keys().hasAll(['name', 'email', 'status', 'uid']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             isValidEmail(data.email) &&
+             data.status in ['New', 'Contacted', 'Qualified', 'Proposal', 'Negotiation', 'Closed'] &&
+             (!('value' in data) || data.value is number) &&
+             (!('avatar' in data) || isValidUrl(data.avatar)) &&
+             (!('role' in data) || data.role is string) &&
+             (!('phone' in data) || data.phone is string) &&
+             (!('website' in data) || data.website is string) &&
+             (!('businessType' in data) || data.businessType is string) &&
+             (!('message' in data) || data.message is string) &&
+             (!('source' in data) || data.source is string) &&
+             (!('vatNumber' in data) || data.vatNumber is string) &&
+             (!('taxCode' in data) || data.taxCode is string) &&
+             (!('address' in data) || data.address is string) &&
+             (!('pecEmail' in data) || data.pecEmail is string) &&
+             (!('sdiCode' in data) || data.sdiCode is string) &&
+             (!('createdAt' in data) || data.createdAt is string) &&
+             (!('meta' in data) || data.meta == null || data.meta is map) &&
+             (isSystemWrite() || data.uid == request.auth.uid) &&
+             data.keys().hasOnly(['name', 'company', 'email', 'status', 'value', 'lastContacted', 'avatar', 'uid', 'role', 'phone', 'website', 'businessType', 'message', 'source', 'vatNumber', 'taxCode', 'address', 'pecEmail', 'sdiCode', 'meta', 'createdAt', '_sys_secret']);
+    }
+
+    function isValidCampaign(data) {
+      return data.keys().hasAll(['name', 'templateId', 'segment', 'status', 'recipientsCount', 'uid']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.templateId is string &&
+             data.segment in ['All Leads', 'Customers', 'Prospects'] &&
+             data.status in ['Draft', 'Sent'] &&
+             data.recipientsCount is number &&
+             data.uid == request.auth.uid &&
+             data.keys().hasOnly(['name', 'templateId', 'segment', 'status', 'sentAt', 'recipientsCount', 'uid']);
+    }
+
+    function isValidTemplate(data) {
+      return data.keys().hasAll(['name', 'subject', 'content', 'uid']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.subject is string && data.subject.size() > 0 && data.subject.size() < 200 &&
+             data.content is string && data.content.size() > 0 && data.content.size() < 10000 &&
+             data.uid == request.auth.uid &&
+             data.keys().hasOnly(['name', 'subject', 'content', 'uid']);
+    }
+
+    function isValidPasswordEntry(data) {
+      return data.keys().hasAll(['title', 'username', 'password', 'category', 'uid']) &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 100 &&
+             data.username is string && data.username.size() > 0 && data.username.size() < 100 &&
+             data.password is string && data.password.size() > 0 && data.password.size() < 200 &&
+             data.category in ['Hosting', 'CMS', 'Social', 'Other'] &&
+             data.uid == request.auth.uid &&
+             data.keys().hasOnly(['title', 'username', 'password', 'url', 'notes', 'category', 'clientId', 'createdAt', 'updatedAt', 'uid']);
+    }
+
+    function isValidDocument(data) {
+      return data.keys().hasAll(['name', 'url', 'uid', 'createdAt']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 255 &&
+             isValidUrl(data.url) &&
+             data.uid == request.auth.uid &&
+             data.keys().hasOnly(['name', 'size', 'url', 'type', 'createdAt', 'uid', 'storagePath']);
+    }
+
+    function isValidNotification(data) {
+      return data.keys().hasAll(['title', 'message', 'type', 'read', 'uid']) &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
+             data.message is string && data.message.size() > 0 && data.message.size() < 1000 &&
+             data.type in ['lead', 'system', 'chat'] &&
+             data.read is bool &&
+             data.uid is string &&
+             (isSystemWrite() || data.uid == request.auth.uid) &&
+             data.keys().hasOnly(['title', 'message', 'type', 'read', 'createdAt', 'uid', '_sys_secret']);
+    }
+
+    function isValidSecurityEvent(data) {
+      return data.keys().hasAll(['event', 'location', 'timestamp', 'status', 'uid']) &&
+             data.event is string && data.event.size() > 0 && data.event.size() < 200 &&
+             data.location is string &&
+             data.timestamp is string &&
+             data.status in ['success', 'warning', 'danger'] &&
+             data.uid is string &&
+             data.keys().hasOnly(['event', 'location', 'timestamp', 'status', 'uid']);
+    }
+
+    function isValidChatMessage(data) {
+      return data.keys().hasAll(['senderId', 'senderName', 'text', 'timestamp', 'recipientId']) &&
+             data.senderId is string &&
+             data.senderName is string &&
+             data.text is string && data.text.size() > 0 && data.text.size() < 2000 &&
+             data.timestamp is string &&
+             data.recipientId is string &&
+             data.keys().hasOnly(['senderId', 'senderName', 'text', 'timestamp', 'recipientId']);
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin() || (isAuthenticated() && resource.data.email == request.auth.token.email);
+      allow create: if (isOwner(userId) && isValidUser(request.resource.data) && (request.resource.data.role == 'affiliate' || request.auth.token.email == "digitalisogni@gmail.com")) || 
+                       (isAdmin() && isValidUser(request.resource.data));
+      allow update: if (isOwner(userId) && isValidUser(request.resource.data) && (request.resource.data.role == resource.data.role)) || 
+                       isAdmin() || isSystemWrite();
+      allow delete: if isAdmin();
+    }
+
+    match /leads/{leadId} {
+      allow list: if isAuthenticated() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow get: if isAuthenticated() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if (isAuthenticated() && isValidLead(request.resource.data)) || isSystemWrite();
+      allow update: if (isDocOwner() || isAdmin()) && isValidLead(request.resource.data) && (resource.data.uid == request.resource.data.uid);
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    match /tasks/{taskId} {
+      allow list: if isAuthenticated() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow get: if isAuthenticated() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
+      allow update: if (isDocOwner() || isAdmin()) && (resource.data.uid == request.resource.data.uid);
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    match /products/{productId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /projects/{projectId} {
+      allow list: if isAuthenticated() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow get: if isAuthenticated() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
+      allow update: if (isDocOwner() || isAdmin()) && (resource.data.uid == request.resource.data.uid);
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    match /events/{eventId} {
+      allow list: if isAuthenticated() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow get: if isAuthenticated() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
+      allow update: if (isDocOwner() || isAdmin()) && (resource.data.uid == request.resource.data.uid);
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    match /campaigns/{campaignId} {
+      allow list: if isAuthenticated() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow get: if isAuthenticated() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && isValidCampaign(request.resource.data);
+      allow update: if (isDocOwner() || isAdmin()) && isValidCampaign(request.resource.data) && (resource.data.uid == request.resource.data.uid);
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    match /templates/{templateId} {
+      allow list: if isAuthenticated() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow get: if isAuthenticated() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && isValidTemplate(request.resource.data);
+      allow update: if (isDocOwner() || isAdmin()) && isValidTemplate(request.resource.data) && (resource.data.uid == request.resource.data.uid);
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    match /passwords/{passwordId} {
+      allow list: if isAuthenticated() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow get: if isAuthenticated() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && isValidPasswordEntry(request.resource.data);
+      allow update: if (isDocOwner() || isAdmin()) && isValidPasswordEntry(request.resource.data) && (resource.data.uid == request.resource.data.uid);
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    function isValidFolder(data) {
+      return data.keys().hasAll(['name', 'uid', 'createdAt']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.uid == request.auth.uid &&
+             data.keys().hasOnly(['name', 'color', 'uid', 'createdAt']);
+    }
+
+    match /folders/{folderId} {
+      allow list: if isAuthenticated() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow get: if isAuthenticated() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && isValidFolder(request.resource.data);
+      allow update: if (isDocOwner() || isAdmin()) && isValidFolder(request.resource.data) && (resource.data.uid == request.resource.data.uid);
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    match /documents/{documentId} {
+      allow list: if isAuthenticated() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow get: if isAuthenticated() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && isValidDocument(request.resource.data);
+      allow update: if (isDocOwner() || isAdmin()) && isValidDocument(request.resource.data) && (resource.data.uid == request.resource.data.uid);
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    match /notifications/{notificationId} {
+      allow list: if isAuthenticated() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow get: if isAuthenticated() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if (isAuthenticated() && isValidNotification(request.resource.data)) || isSystemWrite();
+      allow update: if (isDocOwner() || isAdmin()) && isValidNotification(request.resource.data) && (resource.data.uid == request.resource.data.uid);
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    match /securityEvents/{eventId} {
+      allow list: if isAuthenticated() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow get: if isAuthenticated() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && isValidSecurityEvent(request.resource.data);
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /chatMessages/{messageId} {
+      allow list: if isAdmin() || (isAuthenticated() && (resource.data.senderId == request.auth.uid || resource.data.recipientId == request.auth.uid));
+      allow get: if isAdmin() || (isAuthenticated() && (resource.data.senderId == request.auth.uid || resource.data.recipientId == request.auth.uid));
+      allow create: if isAuthenticated() && isValidChatMessage(request.resource.data) && isOwner(request.resource.data.senderId);
+      allow update: if false;
+      allow delete: if isAdmin() || isOwner(resource.data.senderId);
+    }
+  }
+}

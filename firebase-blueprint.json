@@ -1,0 +1,280 @@
+{
+  "entities": {
+    "Lead": {
+      "title": "Lead",
+      "description": "A potential customer or business opportunity.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Full name of the contact." },
+        "company": { "type": "string", "description": "Company name." },
+        "email": { "type": "string", "format": "email", "description": "Email address." },
+        "status": { "type": "string", "enum": ["New", "Contacted", "Qualified", "Proposal", "Negotiation", "Closed"], "description": "Current stage in the pipeline." },
+        "value": { "type": "number", "description": "Estimated deal value." },
+        "lastContacted": { "type": "string", "format": "date", "description": "Last contact date." },
+        "avatar": { "type": "string", "format": "uri", "description": "Avatar image URL." },
+        "role": { "type": "string" },
+        "phone": { "type": "string" },
+        "website": { "type": "string" },
+        "vatNumber": { "type": "string" },
+        "taxCode": { "type": "string" },
+        "address": { "type": "string" },
+        "pecEmail": { "type": "string" },
+        "sdiCode": { "type": "string" },
+        "source": { "type": "string", "enum": ["Meta", "TikTok", "Email", "WhatsApp", "Manual", "Website"] },
+        "meta": {
+          "type": "object",
+          "properties": {
+            "cookies": { "type": "object" },
+            "ip": { "type": "string" },
+            "userAgent": { "type": "string" },
+            "screen": { "type": "object" },
+            "location": { "type": "object" }
+          }
+        },
+        "uid": { "type": "string", "description": "UID of the user who owns this lead." }
+      },
+      "required": ["name", "email", "status", "uid"]
+    },
+    "Task": {
+      "title": "Task",
+      "description": "A project task or action item.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "Task title." },
+        "description": { "type": "string", "description": "Detailed description." },
+        "status": { "type": "string", "enum": ["Todo", "In Progress", "Completed"], "description": "Current status." },
+        "priority": { "type": "string", "enum": ["Low", "Medium", "High"], "description": "Priority level." },
+        "dueDate": { "type": "string", "format": "date", "description": "Due date." },
+        "progress": { "type": "number", "description": "Completion percentage." },
+        "assignee": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "avatar": { "type": "string" }
+          }
+        },
+        "uid": { "type": "string", "description": "UID of the user who owns this task." }
+      },
+      "required": ["title", "status", "priority", "uid"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "An item in the inventory.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "stock": { "type": "number" },
+        "price": { "type": "number" },
+        "status": { "type": "string", "enum": ["In Stock", "Low Stock", "Out of Stock"] },
+        "features": { "type": "array", "items": { "type": "string" } },
+        "color": { "type": "string" },
+        "borderColor": { "type": "string" },
+        "iconName": { "type": "string" },
+        "uid": { "type": "string", "description": "UID of the user who owns this product." }
+      },
+      "required": ["name", "stock", "price", "uid"]
+    },
+    "Project": {
+      "title": "Project",
+      "description": "A client project.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "client": { "type": "string" },
+        "status": { "type": "string", "enum": ["Active", "Completed", "On Hold"] },
+        "progress": { "type": "number", "minimum": 0, "maximum": 100 },
+        "dueDate": { "type": "string", "format": "date" },
+        "documentation": { "type": "string" },
+        "uid": { "type": "string" }
+      },
+      "required": ["name", "client", "status", "progress", "uid"]
+    },
+    "Event": {
+      "title": "Event",
+      "description": "A calendar event.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "time": { "type": "string" },
+        "type": { "type": "string", "enum": ["Meeting", "Call", "Deadline"] },
+        "uid": { "type": "string" }
+      },
+      "required": ["title", "date", "type", "uid"]
+    },
+    "EmailTemplate": {
+      "title": "Email Template",
+      "description": "A reusable email template.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "subject": { "type": "string" },
+        "content": { "type": "string" },
+        "uid": { "type": "string" }
+      },
+      "required": ["name", "subject", "content", "uid"]
+    },
+    "Campaign": {
+      "title": "Email Campaign",
+      "description": "An email marketing campaign.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "templateId": { "type": "string" },
+        "segment": { "type": "string", "enum": ["All Leads", "Customers", "Prospects"] },
+        "status": { "type": "string", "enum": ["Draft", "Sent"] },
+        "sentAt": { "type": "string", "format": "date-time" },
+        "recipientsCount": { "type": "number" },
+        "uid": { "type": "string" }
+      },
+      "required": ["name", "templateId", "segment", "status", "recipientsCount", "uid"]
+    },
+    "User": {
+      "title": "User",
+      "description": "Application user profile.",
+      "type": "object",
+      "properties": {
+        "displayName": { "type": "string" },
+        "fullName": { "type": "string" },
+        "phone": { "type": "string" },
+        "company": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "photoURL": { "type": "string", "format": "uri" },
+        "role": { "type": "string", "enum": ["admin", "affiliate"] },
+        "status": { "type": "string", "enum": ["active", "pending", "suspended"] },
+        "theme": { "type": "string", "enum": ["light", "dark"] },
+        "taxCode": { "type": "string", "description": "Codice Fiscale" },
+        "vatNumber": { "type": "string", "description": "Partita IVA" },
+        "conditions": { "type": "string", "description": "Contractual conditions" },
+        "apiKey": { "type": "string" },
+        "cookieConfig": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "collectIP": { "type": "boolean" },
+            "collectUserAgent": { "type": "boolean" },
+            "customCookies": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "webhooks": {
+          "type": "object",
+          "properties": {
+            "n8n": { "type": "string" },
+            "zapier": { "type": "string" }
+          }
+        }
+      },
+      "required": ["email", "role"]
+    },
+    "PasswordEntry": {
+      "title": "Password Entry",
+      "description": "A secure storage for client development credentials.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "Service name (e.g., Hosting, WP Admin)." },
+        "username": { "type": "string" },
+        "password": { "type": "string" },
+        "url": { "type": "string", "format": "uri" },
+        "notes": { "type": "string" },
+        "category": { "type": "string", "enum": ["Hosting", "CMS", "Social", "Other"] },
+        "clientId": { "type": "string", "description": "ID of the lead/client this belongs to." },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "uid": { "type": "string", "description": "UID of the user who owns this entry." }
+      },
+      "required": ["title", "username", "password", "category", "uid"]
+    },
+    "Document": {
+      "title": "Document",
+      "description": "A file or document stored in the system.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "size": { "type": "string" },
+        "url": { "type": "string", "format": "uri" },
+        "type": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "uid": { "type": "string" },
+        "storagePath": { "type": "string" }
+      },
+      "required": ["name", "url", "uid", "createdAt"]
+    },
+    "SecurityEvent": {
+      "title": "Security Event",
+      "description": "A system security log entry.",
+      "type": "object",
+      "properties": {
+        "event": { "type": "string" },
+        "location": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["success", "warning", "danger"] },
+        "uid": { "type": "string" }
+      },
+      "required": ["event", "location", "timestamp", "status", "uid"]
+    },
+    "ChatMessage": {
+      "title": "Chat Message",
+      "description": "A message in the admin-affiliate chat.",
+      "type": "object",
+      "properties": {
+        "senderId": { "type": "string" },
+        "senderName": { "type": "string" },
+        "text": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "recipientId": { "type": "string" }
+      },
+      "required": ["senderId", "senderName", "text", "timestamp", "recipientId"]
+    }
+  },
+  "firestore": {
+    "/leads/{leadId}": {
+      "schema": "Lead",
+      "description": "CRM leads collection."
+    },
+    "/tasks/{taskId}": {
+      "schema": "Task",
+      "description": "Project tasks collection."
+    },
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Inventory products collection."
+    },
+    "/projects/{projectId}": {
+      "schema": "Project",
+      "description": "Client projects collection."
+    },
+    "/events/{eventId}": {
+      "schema": "Event",
+      "description": "Calendar events collection."
+    },
+    "/campaigns/{campaignId}": {
+      "schema": "Campaign",
+      "description": "Email marketing campaigns collection."
+    },
+    "/templates/{templateId}": {
+      "schema": "EmailTemplate",
+      "description": "Email templates collection."
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles collection."
+    },
+    "/passwords/{passwordId}": {
+      "schema": "PasswordEntry",
+      "description": "Secure password storage collection."
+    },
+    "/documents/{documentId}": {
+      "schema": "Document",
+      "description": "Stored documents collection."
+    },
+    "/securityEvents/{eventId}": {
+      "schema": "SecurityEvent",
+      "description": "Security logs collection."
+    },
+    "/chatMessages/{messageId}": {
+      "schema": "ChatMessage",
+      "description": "Chat messages collection."
+    }
+  }
+}
