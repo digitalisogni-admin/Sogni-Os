@@ -1,14 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { MessageSquare, X, Send, Sparkles, Bot, User, Trash2, Headphones } from 'lucide-react';
-import { GoogleGenAI } from "@google/genai";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 import { useDashboardStore } from '@/src/store';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
 
 interface Message {
   role: 'user' | 'model';
@@ -83,50 +82,11 @@ export function AIAssistant() {
       setIsLoading(true);
 
       try {
-        const { leads, tasks, projects, users } = useDashboardStore.getState();
-        const stats = {
-          totalLeads: leads.length,
-          activeProjects: projects.filter(p => p.status === 'Active').length,
-          pendingTasks: tasks.filter(t => t.status !== 'Done').length,
-          totalAffiliates: users.filter(u => u.role === 'affiliate').length,
-          role: userRole,
-          userName: user?.displayName || user?.email
-        };
-
-        const modelInstructions = `You are a highly intelligent, empathetic, and professional AI assistant for Nexus CRM, a luxury digital agency management platform. 
-          Your tone is "Cyber-Luxury": sophisticated, efficient, and warm. You speak like a high-end concierge or a senior partner in a digital agency.
-          
-          CRITICAL: You must respond in the user's current language: ${i18n.language === 'it' ? 'Italian' : i18n.language === 'fr' ? 'French' : 'English'}.
-          
-          Current Platform Context:
-          - User: ${stats.userName} (Role: ${stats.role})
-          - Total Leads: ${stats.totalLeads}
-          - Active Projects: ${stats.activeProjects}
-          - Pending Tasks: ${stats.pendingTasks}
-          - Total Affiliates: ${stats.totalAffiliates}
-
-          You help with CRM tasks, project management, social media strategy, and general business questions. 
-          Be proactive, offer suggestions, and maintain a human-like conversational flow. Avoid robotic or overly formal language. 
-          Use the context of a 'Cyber-Luxury' agency - think neon, luxury, high-tech, and premium service.
-          
-          When the user asks about the CRM, you can explain that it's a complete tool for managing leads, projects, inventory, and social media.
-          If they ask about security, mention the administrative controls and encrypted database.
-          If they ask about affiliates, explain how they can invite partners and manage their profiles.
-          
-          Always be helpful and try to anticipate their next needs. If they seem stuck, offer a few options for what they could do next.`;
-
-        const response = await ai.models.generateContent({
-          model: "gemini-3-flash-preview",
-          contents: [...messages, { role: 'user', text: userMessage }].map(m => ({
-            role: m.role === 'user' ? 'user' : 'model',
-            parts: [{ text: m.text }]
-          })),
-          config: {
-            systemInstruction: modelInstructions
-          }
-        });
-
-        const botResponse = response.text || "I'm sorry, I couldn't process that.";
+        // Mock AI Response
+        await new Promise(resolve => setTimeout(resolve, 800)); // Simulate network latency
+        
+        const botResponse = `I'm a mockup AI bot. I understand you asked: "${userMessage}". In a fully deployed environment with API keys, I would give a contextual answer based on your CRM data.`;
+        
         setMessages(prev => [...prev, { role: 'model', text: botResponse }]);
       } catch (error) {
         console.error("AI Error:", error);

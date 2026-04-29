@@ -1,7 +1,6 @@
 import { useState, FormEvent } from 'react';
 import { useDashboardStore } from '@/src/store';
 import { useTranslation } from 'react-i18next';
-import { GoogleGenAI } from "@google/genai";
 import { 
   Mail, 
   Plus, 
@@ -79,34 +78,14 @@ export function EmailMarketing() {
   const generateAIContent = async () => {
     setIsGenerating(true);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      // Mock generation
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      const prompt = `Generate a high-converting marketing email for a luxury digital agency. 
-      Topic: New Service Launch. 
-      Tone: Sophisticated, Cyber-Luxury, Professional.
-      Language: ${i18n.language === 'it' ? 'Italian' : i18n.language === 'fr' ? 'French' : 'English'}.
-      Return a JSON with "subject" and "content" fields.`;
-
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: prompt,
-        config: {
-          responseMimeType: "application/json"
-        }
+      setAiGeneratedTemplate({
+        subject: 'Explore the Future of Digital Excellence',
+        content: 'Dear {{name}},\n\nWe are excited to share our latest advancements in digital strategy. Dive in and discover how we can elevate your brand.\n\nBest,\nThe Nexus Team'
       });
-      
-      const text = response.text;
-      
-      if (text) {
-        // Handle common markdown wrapper if present
-        const sanitizedText = text.replace(/```json\n?/, '').replace(/\n?```/, '').trim();
-        const data = JSON.parse(sanitizedText);
-        setAiGeneratedTemplate({
-          subject: data.subject || '',
-          content: data.content || ''
-        });
-        toast.success(t('ai_content_ready', 'AI Suggestion ready! Click "Use AI Suggestion" to apply.'));
-      }
+      toast.success(t('ai_content_ready', 'AI Suggestion ready! Click "Use AI Suggestion" to apply.'));
     } catch (error) {
       console.error("AI Generation Error:", error);
       toast.error(t('ai_generation_failed'));
