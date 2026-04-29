@@ -57,8 +57,8 @@ export function EmailMarketing() {
     {
       id: 'welcome-lux',
       name: 'Welcome Email (Luxury)',
-      subject: 'Welcome to the Sogni Digital Ecosystem',
-      content: 'Hello {{name}}! Welcome to Sogni Agency. We are thrilled to have you on board as we redefine digital excellence together.'
+      subject: 'Welcome to the Nexus Digital Ecosystem',
+      content: 'Hello {{name}}! Welcome to Nexus Agency. We are thrilled to have you on board as we redefine digital excellence together.'
     },
     {
       id: 'confirmation-lux',
@@ -69,7 +69,7 @@ export function EmailMarketing() {
     {
       id: 'affiliate-welcome',
       name: 'Affiliate Welcome',
-      subject: 'Welcome to the Sogni Affiliate Program',
+      subject: 'Welcome to the Nexus Affiliate Program',
       content: 'Ciao! Welcome to our partner network. You can now track your leads and commissions directly from your dashboard.'
     }
   ];
@@ -182,7 +182,7 @@ export function EmailMarketing() {
                 <DialogHeader>
                   <DialogTitle>{editingTemplate ? t('edit_template') : t('create_template')}</DialogTitle>
                 </DialogHeader>
-                <form onSubmit={handleCreateTemplate} className="space-y-4 py-4">
+                <form key={editingTemplate?.id || 'new'} onSubmit={handleCreateTemplate} className="space-y-4 py-4">
                   <div className="space-y-2">
                     <Label htmlFor="name">{t('template_name')}</Label>
                     <Input id="name" name="name" defaultValue={editingTemplate?.name} required className="rounded-xl bg-white/5 border-none h-11" />

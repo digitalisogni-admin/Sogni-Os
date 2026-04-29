@@ -30,11 +30,11 @@ export function InvoiceGeneratorModal({ isOpen, onClose, selectedProducts = [] }
   const invoiceRef = useRef<HTMLDivElement>(null);
   
   const [agencyInfo, setAgencyInfo] = useState({
-    name: 'SOGNI DIGITALI',
-    details: 'D.L OLIVER POLYDOR\nOLIVER.POLYDOR@ZILDEISOGNI.COM\nVIA GINO LISA, 45 TO 10147\nP.IVA : IT13347550017'
+    name: 'Nexus Agency',
+    details: 'JOHN DOE\nJOHN.DOE@EXAMPLE.COM\n123 MOCKUP STREET, NY 10001\nVAT : US123456789'
   });
 
-  const [clientInfo, setClientInfo] = useState('A BELLE E RIBELLE');
+  const [clientInfo, setClientInfo] = useState('A mock client corp');
   
   const [items, setItems] = useState<InvoiceItem[]>(
     selectedProducts.length > 0 

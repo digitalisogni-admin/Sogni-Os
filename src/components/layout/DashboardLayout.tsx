@@ -56,7 +56,6 @@ import {
   DialogFooter
 } from '@/components/ui/dialog';
 import { useDashboardStore } from '@/src/store';
-import { updateProfile } from 'firebase/auth';
 import { toast } from 'sonner';
 
 interface LayoutProps {
@@ -166,7 +165,13 @@ export function DashboardLayout({ children, activeTab, setActiveTab }: LayoutPro
     const photoURL = formData.get('photoURL') as string;
 
     try {
-      await updateProfile(user, { displayName, photoURL });
+      useDashboardStore.setState({
+        user: {
+          ...user,
+          displayName,
+          photoURL
+        }
+      });
       toast.success(t('profile_updated'));
       setIsProfileModalOpen(false);
     } catch (error) {
@@ -215,7 +220,7 @@ export function DashboardLayout({ children, activeTab, setActiveTab }: LayoutPro
                 className="flex flex-col"
               >
                 <span className="font-black text-xl tracking-[0.2em] whitespace-nowrap shimmer-text font-heading">
-                  SOGNI CRM
+                  NEXUS CRM
                 </span>
                 <span className="text-[8px] font-bold tracking-[0.4em] uppercase text-muted-foreground/60 -mt-1 ml-0.5">
                   Intelligence v1
@@ -447,7 +452,7 @@ export function DashboardLayout({ children, activeTab, setActiveTab }: LayoutPro
                   <DropdownMenuSeparator className="bg-border" />
                   <DropdownMenuGroup>
                     <DropdownMenuLabel className="px-4 py-2 text-[10px] uppercase text-muted-foreground font-bold">{t('switch_role')}</DropdownMenuLabel>
-                    {(user?.email === 'digitalisogni@gmail.com') && (
+                    {(user?.email === 'admin@mockagency.com') && (
                       <DropdownMenuItem 
                         onClick={() => setUserRole('superadmin')}
                         className={cn("px-4 py-3 focus:bg-white/5 rounded-xl cursor-pointer gap-3", userRole === 'superadmin' && "text-primary")}

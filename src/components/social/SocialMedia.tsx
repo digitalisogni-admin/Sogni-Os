@@ -325,7 +325,7 @@ export function SocialMedia() {
               <div className="space-y-1">
                 <p className="text-sm font-bold">{t('auth_required', 'Authentication Required')}</p>
                 <p className="text-xs text-muted-foreground">
-                  {t('connect_desc', `Grant Sogni permissions to manage your ${connectingPlatform} assets and insights.`)}
+                  {t('connect_desc', `Grant Nexus permissions to manage your ${connectingPlatform} assets and insights.`)}
                 </p>
               </div>
             </div>

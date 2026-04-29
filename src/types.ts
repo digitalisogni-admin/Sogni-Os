@@ -44,7 +44,7 @@ export interface Lead {
   pecEmail?: string;
   sdiCode?: string;
   uid?: string;
-  source?: 'Meta' | 'TikTok' | 'Email' | 'WhatsApp' | 'Manual' | 'Website';
+  source?: 'Meta' | 'TikTok' | 'Email' | 'WhatsApp' | 'Manual' | 'Website' | 'Google Sheets';
   commissionScenario?: 'A' | 'B' | 'C' | 'D';
   carePlan?: 'None' | 'Essential' | 'Pro';
   activities?: { id: string; type: string; date: string; description: string }[];

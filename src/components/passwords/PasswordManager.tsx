@@ -30,8 +30,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useTranslation } from 'react-i18next';
-import { db, handleFirestoreError, OperationType } from '@/src/lib/firebase';
-import { collection, addDoc, query, where, onSnapshot, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
+// Removed firebase imports
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { PasswordEntry } from '@/src/types';
@@ -39,36 +38,32 @@ import { PasswordEntry } from '@/src/types';
 export function PasswordManager() {
   const { t } = useTranslation();
   const { user } = useDashboardStore();
-  const [passwords, setPasswords] = useState<PasswordEntry[]>([]);
+  const [passwords, setPasswords] = useState<PasswordEntry[]>([
+    {
+      id: '1',
+      title: 'SiteGround Hosting',
+      username: 'admin@mockagency.com',
+      password: 'mockpassword123',
+      url: 'https://siteground.com/login',
+      category: 'Hosting',
+      notes: 'Main hosting account',
+      uid: 'mock-uid',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }
+  ]);
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
   const [filter, setFilter] = useState('All');
-
-  useEffect(() => {
-    if (!user) return;
-
-    const q = query(
-      collection(db, 'passwords'),
-      where('uid', '==', user.uid)
-    );
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PasswordEntry));
-      setPasswords(docs);
-    }, (error) => {
-      handleFirestoreError(error, OperationType.GET, 'passwords');
-    });
-
-    return () => unsubscribe();
-  }, [user]);
 
   const handleAddPassword = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!user) return;
 
     const formData = new FormData(e.currentTarget);
-    const newEntry = {
+    const newEntry: PasswordEntry = {
+      id: Math.random().toString(),
       title: formData.get('title') as string,
       username: formData.get('username') as string,
       password: formData.get('password') as string,
@@ -80,22 +75,14 @@ export function PasswordManager() {
       updatedAt: new Date().toISOString(),
     };
 
-    try {
-      await addDoc(collection(db, 'passwords'), newEntry);
-      toast.success(t('password_saved'));
-      setShowAddModal(false);
-    } catch (error) {
-      handleFirestoreError(error, OperationType.WRITE, 'passwords');
-    }
+    setPasswords(prev => [...prev, newEntry]);
+    toast.success(t('password_saved'));
+    setShowAddModal(false);
   };
 
   const handleDelete = async (id: string) => {
-    try {
-      await deleteDoc(doc(db, 'passwords', id));
-      toast.success(t('password_deleted'));
-    } catch (error) {
-      handleFirestoreError(error, OperationType.DELETE, 'passwords');
-    }
+    setPasswords(prev => prev.filter(p => p.id !== id));
+    toast.success(t('password_deleted'));
   };
 
   const toggleVisibility = (id: string) => {

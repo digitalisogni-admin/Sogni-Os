@@ -92,7 +92,7 @@ export function Intelligence() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           apiKey,
-          name: "Test Sogni Simulation",
+          name: "Test Nexus Simulation",
           email: user?.email || "test@simulation.com",
           phone: "+39 123 456 789",
           message: "Auto-generated test lead from Bridge Simulation console.",
@@ -114,14 +114,14 @@ export function Intelligence() {
 
   const copySnippet = () => {
     const snippet = `
-<!-- Sogni Hub Lead Capture -->
+<!-- Nexus Hub Lead Capture -->
 <script>
-  window.SOGNI_HUB_CONFIG = {
+  window.NEXUS_HUB_CONFIG = {
     apiKey: "${apiKey}",
     endpoint: "${window.location.origin}/api/leads/capture"
   };
 </script>
-<script src="https://cdn.jsdelivr.net/gh/digitalisogni/sogni-hub-lead-capture@main/dist/capture.js" async></script>
+<script src="https://cdn.jsdelivr.net/gh/digitalinexus/nexus-hub-lead-capture@main/dist/capture.js" async></script>
     `.trim();
     navigator.clipboard.writeText(snippet);
     setCopied(true);
@@ -332,14 +332,14 @@ export function Intelligence() {
                   </div>
                 </div>
                 <pre className="text-[10px] md:text-sm font-mono text-muted-foreground bg-white/5 p-4 rounded-xl overflow-x-auto border border-white/5 leading-relaxed">
-{`<!-- Sogni Hub Lead Capture -->
+{`<!-- Nexus Hub Lead Capture -->
 <script>
-  window.SOGNI_HUB_CONFIG = {
+  window.NEXUS_HUB_CONFIG = {
     apiKey: "${apiKey}",
     endpoint: "${window.location.origin}/api/leads/capture"
   };
 </script>
-<script src="https://cdn.jsdelivr.net/gh/digitalisogni/sogni-hub-lead-capture@main/dist/capture.js" async></script>`}
+<script src="https://cdn.jsdelivr.net/gh/mockuser/nexus-hub-lead-capture@main/dist/capture.js" async></script>`}
                 </pre>
               </div>
 

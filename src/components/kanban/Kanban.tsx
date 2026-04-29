@@ -41,7 +41,7 @@ import { useDashboardStore } from '@/src/store';
 
 const columns: LeadStatus[] = ['New', 'Contacted', 'Qualified', 'Proposal', 'Negotiation', 'Closed'];
 
-export function Kanban() {
+export function Kanban({ hideHeader }: { hideHeader?: boolean }) {
   const { t } = useTranslation();
   const { leads, updateLeadStatus, updateLead, deleteLead, userRole } = useDashboardStore();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -89,15 +89,17 @@ export function Kanban() {
 
   return (
     <div className="space-y-8 h-full flex flex-col">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Lead Pipeline</h1>
-          <p className="text-muted-foreground">Qualify and manage your sales leads with drag and drop</p>
+      {!hideHeader && (
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Lead Pipeline</h1>
+            <p className="text-muted-foreground">Qualify and manage your sales leads with drag and drop</p>
+          </div>
+          <Button className="bg-primary hover:bg-primary/80 text-primary-foreground rounded-xl shadow-[0_0_20px_rgba(0,255,255,0.3)]">
+            <Plus className="w-4 h-4 mr-2" /> New Lead
+          </Button>
         </div>
-        <Button className="bg-primary hover:bg-primary/80 text-primary-foreground rounded-xl shadow-[0_0_20px_rgba(0,255,255,0.3)]">
-          <Plus className="w-4 h-4 mr-2" /> New Lead
-        </Button>
-      </div>
+      )}
 
       <DragDropContext onDragEnd={onDragEnd}>
         <div className="flex gap-6 overflow-x-auto pb-6 flex-1 min-h-0 no-scrollbar">
@@ -246,7 +248,7 @@ export function Kanban() {
             <DialogTitle>{t('edit_lead')}</DialogTitle>
           </DialogHeader>
           {editingLead && (
-            <form onSubmit={handleEditLead} className="space-y-4 py-4">
+            <form key={editingLead.id} onSubmit={handleEditLead} className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="edit-name">{t('full_name')}</Label>
                 <Input id="edit-name" name="name" defaultValue={editingLead.name} required className="rounded-xl bg-white/5 border-none h-11" />

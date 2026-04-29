@@ -44,10 +44,12 @@ import {
   Linkedin,
   Music2,
   Send,
-  Fingerprint
+  Fingerprint,
+  RefreshCw
 } from 'lucide-react';
 import { Lead } from '@/src/types';
 import { useDashboardStore } from '@/src/store';
+import Papa from 'papaparse';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -77,6 +79,7 @@ import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'motion/react';
 import { Trash2, Edit } from 'lucide-react';
 import { EmailInbox } from '../marketing/EmailInbox';
+import { Kanban as KanbanBoard } from '../kanban/Kanban';
 
 export function CRM() {
   const { t } = useTranslation();
@@ -89,8 +92,87 @@ export function CRM() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<Lead | null>(null);
   const [selectedContact, setSelectedContact] = useState<Lead | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const isAdmin = userRole === 'admin' || userRole === 'superadmin';
+  const googleSheetUrl = useDashboardStore(state => state.googleSheetId); // We reused this property for the CSV URL
+
+  const handleSyncSheets = async () => {
+    if (!googleSheetUrl) {
+      toast.error('Please configure your Google Sheets CSV URL in Settings first.');
+      return;
+    }
+
+    setIsSyncing(true);
+    toast.info('Syncing from Google Sheets...', { duration: 2000 });
+
+    try {
+      const response = await fetch(googleSheetUrl);
+      const csvText = await response.text();
+
+      Papa.parse(csvText, {
+        header: true,
+        skipEmptyLines: true,
+        complete: async (results) => {
+          const rows = results.data as any[];
+          let addedCount = 0;
+
+          for (const row of rows) {
+            // Find map keys flexibly
+            const nameKey = Object.keys(row).find(k => k.toLowerCase().includes('name'));
+            const emailKey = Object.keys(row).find(k => k.toLowerCase().includes('email'));
+            const phoneKey = Object.keys(row).find(k => k.toLowerCase().includes('phone') || k.toLowerCase().includes('tel'));
+            const messageKey = Object.keys(row).find(k => k.toLowerCase().includes('message') || k.toLowerCase().includes('note'));
+            
+            const parsedEmail = emailKey ? row[emailKey]?.trim() : '';
+            const phone = phoneKey ? row[phoneKey]?.trim() : '';
+
+            // Skip if no email or phone
+            if (!parsedEmail && !phone) continue;
+            
+            // Firebase strictly requires a valid email string
+            const email = parsedEmail || `no-email-${Math.random().toString(36).substring(7)}@nexus.os`;
+
+            // Prevent duplicates
+            const isDuplicate = leads.some(l => 
+              (parsedEmail && l.email?.toLowerCase() === parsedEmail.toLowerCase()) || 
+              (phone && l.phone === phone)
+            );
+
+            if (!isDuplicate) {
+              await addLead({
+                name: nameKey ? row[nameKey] : "Unknown",
+                company: "Unknown", // Added missing required property
+                email: email,
+                phone: phone,
+                message: messageKey ? row[messageKey] : "",
+                source: "Google Sheets",
+                status: "New",
+                value: 0,
+                lastContacted: new Date().toISOString().split('T')[0],
+                avatar: `https://picsum.photos/seed/${Math.random()}/100/100`,
+                uid: user?.uid || "",
+                createdAt: new Date().toISOString()
+              });
+              addedCount++;
+            }
+          }
+
+          setIsSyncing(false);
+          toast.success(`Synced successfully. Added ${addedCount} new leads.`);
+        },
+        error: (err: any) => {
+          console.error("PapaParse error:", err);
+          setIsSyncing(false);
+          toast.error('Failed to parse the Google Sheet CSV.');
+        }
+      });
+    } catch (error) {
+      console.error("Fetch error:", error);
+      setIsSyncing(false);
+      toast.error('Could not fetch Google Sheet. Make sure the link is published to web.');
+    }
+  };
 
   const filteredContacts = leads
     .filter(c => 
@@ -156,7 +238,7 @@ export function CRM() {
     }
     const cleanPhone = phone.replace(/[^0-9]/g, '');
     const message = template === 'intro' 
-      ? `Ciao! Mi chiamo ${user?.displayName || 'Sogni Agent'}, ti contatto per il tuo interesse nei nostri servizi.`
+      ? `Ciao! Mi chiamo ${user?.displayName || 'Nexus Agent'}, ti contatto per il tuo interesse nei nostri servizi.`
       : `Ciao! Ti scrivo per sapere se hai ricevuto la nostra proposta e se hai delle domande.`;
     window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
   };
@@ -305,6 +387,17 @@ export function CRM() {
                     <Kanban className="w-4 h-4" />
                   </Button>
                 </div>
+                
+                <Button 
+                  onClick={handleSyncSheets} 
+                  disabled={isSyncing}
+                  variant="outline"
+                  className="rounded-xl shadow-sm border-border hover:bg-white/5 transition-all text-sm gap-2"
+                >
+                  <RefreshCw className={cn("w-4 h-4", isSyncing && "animate-spin")} />
+                  {isSyncing ? "Syncing..." : "Sync Sheets"}
+                </Button>
+
                 <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
                 <DialogTrigger asChild>
                   <Button className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-lg ring-1 ring-primary/20 transition-all hover:scale-[1.02]">
@@ -332,12 +425,12 @@ export function CRM() {
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="company" className="text-muted-foreground">{t('company_name')}</Label>
-                          <Input id="company" name="company" placeholder="Sogni Agency" required className="rounded-xl bg-white/5 border-none h-11 focus-visible:ring-1 focus-visible:ring-primary" />
+                          <Input id="company" name="company" placeholder="Nexus Agency" required className="rounded-xl bg-white/5 border-none h-11 focus-visible:ring-1 focus-visible:ring-primary" />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <Label htmlFor="email" className="text-muted-foreground">{t('email_address')}</Label>
-                            <Input id="email" name="email" type="email" placeholder="rosa@sogni.it" required className="rounded-xl bg-white/5 border-none h-11 focus-visible:ring-1 focus-visible:ring-primary" />
+                            <Input id="email" name="email" type="email" placeholder="rosa@nexus.it" required className="rounded-xl bg-white/5 border-none h-11 focus-visible:ring-1 focus-visible:ring-primary" />
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="phone" className="text-muted-foreground">{t('phone_whatsapp')}</Label>
@@ -444,7 +537,7 @@ export function CRM() {
                           <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                               <Label htmlFor="pec" className="text-muted-foreground">{t('pec_email')}</Label>
-                              <Input id="pec" name="pec" type="email" placeholder="sogni@legalmail.it" className="rounded-xl bg-white/5 border-none h-11 focus-visible:ring-1 focus-visible:ring-primary" />
+                              <Input id="pec" name="pec" type="email" placeholder="nexus@legalmail.it" className="rounded-xl bg-white/5 border-none h-11 focus-visible:ring-1 focus-visible:ring-primary" />
                             </div>
                             <div className="space-y-2">
                               <Label htmlFor="sdi" className="text-muted-foreground">{t('sdi_code')}</Label>
@@ -472,6 +565,11 @@ export function CRM() {
               </div>
             </div>
 
+            {viewMode === 'kanban' ? (
+              <div className="h-[600px] mt-4">
+                <KanbanBoard hideHeader />
+              </div>
+            ) : (
             <Card className="bg-card border-border shadow-2xl rounded-2xl overflow-hidden">
               <CardHeader className="p-6 border-b border-border">
                 <div className="flex items-center justify-between gap-4">
@@ -617,6 +715,7 @@ export function CRM() {
                 </Table>
               </CardContent>
             </Card>
+            )}
 
             <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
               <DialogContent className="sm:max-w-[600px] bg-card border-border text-foreground rounded-3xl p-0 overflow-hidden">
@@ -624,7 +723,7 @@ export function CRM() {
                   <DialogTitle className="text-xl font-bold">{t('edit_contact')}</DialogTitle>
                 </DialogHeader>
                 {editingContact && (
-                  <form onSubmit={handleEditContact} className="max-h-[80vh] overflow-y-auto no-scrollbar">
+                  <form key={editingContact.id} onSubmit={handleEditContact} className="max-h-[80vh] overflow-y-auto no-scrollbar">
                     <div className="p-6 space-y-8">
                       {/* Identity Core */}
                       <div className="space-y-4">
@@ -705,7 +804,7 @@ export function CRM() {
                           <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                               <Label htmlFor="edit-pec" className="text-muted-foreground">{t('pec_email')}</Label>
-                              <Input id="edit-pec" name="pec" type="email" defaultValue={editingContact.pecEmail} placeholder="sogni@legalmail.it" className="rounded-xl bg-white/5 border-none h-11 focus-visible:ring-1 focus-visible:ring-primary" />
+                              <Input id="edit-pec" name="pec" type="email" defaultValue={editingContact.pecEmail} placeholder="nexus@legalmail.it" className="rounded-xl bg-white/5 border-none h-11 focus-visible:ring-1 focus-visible:ring-primary" />
                             </div>
                             <div className="space-y-2">
                               <Label htmlFor="edit-sdi" className="text-muted-foreground">{t('sdi_code')}</Label>

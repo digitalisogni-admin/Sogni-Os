@@ -104,6 +104,8 @@ service cloud.firestore {
              (!('businessType' in data) || data.businessType is string) &&
              (!('message' in data) || data.message is string) &&
              (!('source' in data) || data.source is string) &&
+             (!('commissionScenario' in data) || data.commissionScenario in ['A', 'B', 'C', 'D']) &&
+             (!('carePlan' in data) || data.carePlan in ['None', 'Essential', 'Pro']) &&
              (!('vatNumber' in data) || data.vatNumber is string) &&
              (!('taxCode' in data) || data.taxCode is string) &&
              (!('address' in data) || data.address is string) &&
@@ -112,7 +114,7 @@ service cloud.firestore {
              (!('createdAt' in data) || data.createdAt is string) &&
              (!('meta' in data) || data.meta == null || data.meta is map) &&
              (isSystemWrite() || data.uid == request.auth.uid) &&
-             data.keys().hasOnly(['name', 'company', 'email', 'status', 'value', 'lastContacted', 'avatar', 'uid', 'role', 'phone', 'website', 'businessType', 'message', 'source', 'vatNumber', 'taxCode', 'address', 'pecEmail', 'sdiCode', 'meta', 'createdAt', '_sys_secret']);
+             data.keys().hasOnly(['name', 'company', 'email', 'status', 'value', 'lastContacted', 'avatar', 'uid', 'role', 'phone', 'website', 'businessType', 'message', 'source', 'commissionScenario', 'carePlan', 'vatNumber', 'taxCode', 'address', 'pecEmail', 'sdiCode', 'meta', 'createdAt', '_sys_secret']);
     }
 
     function isValidCampaign(data) {
@@ -187,6 +189,15 @@ service cloud.firestore {
     // ===============================================================
     // Rules
     // ===============================================================
+
+    // API Keys Mapping (for Lead Capture resolution)
+    match /apiKeys/{apiKey} {
+      // The API key itself serves as the un-guessable token. Backend needs to read this mapping without auth.
+      allow get: if true; 
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.uid;
+      allow update: if isAuthenticated() && request.auth.uid == resource.data.uid && request.auth.uid == request.resource.data.uid;
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.uid;
+    }
 
     match /users/{userId} {
       allow read: if isOwner(userId) || isAdmin() || (isAuthenticated() && resource.data.email == request.auth.token.email);

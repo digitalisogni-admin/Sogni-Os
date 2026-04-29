@@ -25,8 +25,7 @@ import {
   DialogTrigger,
   DialogFooter
 } from '@/components/ui/dialog';
-import { db } from '@/src/lib/firebase';
-import { collection, query, where, getDocs, addDoc, doc, updateDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
+// Removed firebase imports
 
 interface Affiliate {
   id: string;
@@ -34,7 +33,7 @@ interface Affiliate {
   fullName?: string;
   phone?: string;
   company?: string;
-  role: 'affiliate';
+  role: 'affiliate' | 'admin' | 'superadmin';
   status: 'active' | 'pending' | 'suspended';
   createdAt: string;
 }
@@ -51,17 +50,19 @@ export function AffiliateManagement() {
   useEffect(() => {
     if (userRole !== 'admin' && userRole !== 'superadmin') return;
 
-    const q = query(collection(db, 'users'), where('role', '==', 'affiliate'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const list = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Affiliate[];
-      setAffiliates(list);
-      setIsLoading(false);
-    });
-
-    return () => unsubscribe();
+    setAffiliates([
+      {
+        id: 'mock-1',
+        email: 'partner@example.com',
+        fullName: 'Jane Doe',
+        phone: '+1 234 567 8900',
+        company: 'Partner Inc',
+        role: 'affiliate',
+        status: 'active',
+        createdAt: new Date().toISOString()
+      }
+    ]);
+    setIsLoading(false);
   }, [userRole]);
 
   if (userRole !== 'admin' && userRole !== 'superadmin') {
@@ -82,70 +83,54 @@ export function AffiliateManagement() {
     const phone = formData.get('phone') as string;
     const company = formData.get('company') as string;
 
-    const data = {
+    const data: Affiliate = {
+      id: Math.random().toString(),
       email,
       fullName,
       phone,
       company,
-      taxCode: formData.get('taxCode') as string,
-      vatNumber: formData.get('vatNumber') as string,
-      conditions: formData.get('conditions') as string,
       role: 'affiliate',
       status: 'pending',
       createdAt: new Date().toISOString()
     };
     
-    console.log("Creating affiliate with data:", data);
-
-    try {
-      await addDoc(collection(db, 'users'), data);
-      
-      setIsAddModalOpen(false);
-      toast.success(t('affiliate_invitation_sent', { email }));
-    } catch (error) {
-      console.error("Error creating affiliate:", error);
-      toast.error(t('failed_to_create_affiliate'));
-    }
+    setAffiliates(prev => [...prev, data]);
+    setIsAddModalOpen(false);
+    toast.success(t('affiliate_invitation_sent', { email }));
   };
 
   const handleDeleteAffiliate = async (id: string) => {
     if (!confirm(t('confirm_delete_affiliate'))) return;
-    try {
-      await deleteDoc(doc(db, 'users', id));
-      toast.success(t('affiliate_account_removed'));
-    } catch (error) {
-      toast.error(t('failed_to_remove_affiliate'));
-    }
+    setAffiliates(prev => prev.filter(a => a.id !== id));
+    toast.success(t('affiliate_account_removed'));
   };
 
   const handleUpdateAffiliateStatus = async (id: string, status: Affiliate['status']) => {
-    try {
-      await updateDoc(doc(db, 'users', id), { status });
-      toast.success(t('affiliate_status_updated', { status }));
-    } catch (error) {
-      toast.error(t('failed_to_update_status'));
-    }
+    setAffiliates(prev => prev.map(a => a.id === id ? { ...a, status } : a));
+    toast.success(t('affiliate_status_updated', { status }));
   };
 
   const handleEditAffiliate = async (e: FormEvent) => {
     e.preventDefault();
     if (!editingAffiliate) return;
     const formData = new FormData(e.target as HTMLFormElement);
-    try {
-      await updateDoc(doc(db, 'users', editingAffiliate.id), {
-        fullName: formData.get('fullName') as string,
-        email: formData.get('email') as string,
-        phone: formData.get('phone') as string,
-        company: formData.get('company') as string,
-        taxCode: formData.get('taxCode') as string,
-        vatNumber: formData.get('vatNumber') as string,
-      });
-      setIsEditModalOpen(false);
-      setEditingAffiliate(null);
-      toast.success(t('affiliate_updated'));
-    } catch (error) {
-      toast.error(t('failed_to_update_affiliate'));
-    }
+    
+    setAffiliates(prev => prev.map(a => {
+      if (a.id === editingAffiliate.id) {
+        return {
+          ...a,
+          fullName: formData.get('fullName') as string,
+          email: formData.get('email') as string,
+          phone: formData.get('phone') as string,
+          company: formData.get('company') as string,
+        };
+      }
+      return a;
+    }));
+    
+    setIsEditModalOpen(false);
+    setEditingAffiliate(null);
+    toast.success(t('affiliate_updated'));
   };
 
   return (
@@ -338,12 +323,8 @@ export function AffiliateManagement() {
                             {userRole === 'superadmin' && affiliate.role !== 'superadmin' && (
                               <DropdownMenuItem 
                                 onClick={async () => {
-                                  try {
-                                    await updateDoc(doc(db, 'users', affiliate.id), { role: 'admin' });
-                                    toast.success(t('promoted_to_admin', 'Promoted to Admin'));
-                                  } catch (error) {
-                                    toast.error(t('failed_to_promote', 'Failed to promote user'));
-                                  }
+                                  setAffiliates(prev => prev.map(a => a.id === affiliate.id ? { ...a, role: 'admin' } : a));
+                                  toast.success(t('promoted_to_admin', 'Promoted to Admin'));
                                 }} 
                                 className="gap-2 cursor-pointer text-primary"
                               >
@@ -397,7 +378,7 @@ export function AffiliateManagement() {
             <DialogTitle>{t('edit_affiliate_account')}</DialogTitle>
           </DialogHeader>
           {editingAffiliate && (
-            <form onSubmit={handleEditAffiliate} className="space-y-6 py-4">
+            <form key={editingAffiliate.uid} onSubmit={handleEditAffiliate} className="space-y-6 py-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-4">
                   <div className="space-y-2">

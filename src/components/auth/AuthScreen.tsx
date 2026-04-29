@@ -22,7 +22,7 @@ export function AuthScreen() {
     try {
       if (mode === 'login') {
         await loginWithEmail(email, password);
-        toast.success(t('auth_success', 'Welcome back to Sogni OS'));
+        toast.success(t('auth_success', 'Welcome back to Nexus OS'));
       } else if (mode === 'signup') {
         await signupWithEmail(email, password);
         toast.success(t('signup_success', 'Profile created successfully'));
@@ -41,7 +41,7 @@ export function AuthScreen() {
   const handleGoogleLogin = async () => {
     try {
       await login();
-      toast.success(t('auth_success', 'Welcome to Sogni OS'));
+      toast.success(t('auth_success', 'Welcome to Nexus OS'));
     } catch (error: any) {
       toast.error(t('google_failed', 'Cloud authentication failed'));
     }
@@ -68,7 +68,7 @@ export function AuthScreen() {
               animate={{ letterSpacing: ['0.1em', '0.2em', '0.1em'] }}
               transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
             >
-              SOGNI
+              NEXUS
             </motion.h1>
             <div className="flex flex-col items-center">
               <span className="text-primary font-bold uppercase tracking-[0.6em] text-[10px] opacity-80">
@@ -114,7 +114,7 @@ export function AuthScreen() {
                     <Input
                       type="email"
                       required
-                      placeholder="identity@sogni.cloud"
+                      placeholder="identity@nexus.cloud"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="bg-white/5 border-white/10 h-14 pl-12 rounded-2xl focus:ring-primary/50 transition-all placeholder:text-white/20"
@@ -200,7 +200,7 @@ export function AuthScreen() {
             Biometric-Ready Encryption
           </div>
           <p className="text-[9px] text-white/20 uppercase tracking-widest leading-relaxed max-w-[280px] mx-auto">
-            Sogni Intelligence Network uses decentralized security protocols for all administrative data.
+            Nexus Intelligence Network uses decentralized security protocols for all administrative data.
           </p>
         </motion.div>
       </div>

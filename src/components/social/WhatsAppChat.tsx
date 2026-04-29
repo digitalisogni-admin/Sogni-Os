@@ -103,7 +103,7 @@ export function WhatsAppChat() {
       },
       {
         id: '3',
-        name: 'Sogni Digitali Support',
+        name: 'Nexus Agency Support',
         avatar: '/logo_sd.png',
         lastMessage: 'Il tuo account è stato verificato.',
         time: 'Yesterday',
@@ -337,7 +337,7 @@ export function WhatsAppChat() {
               <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center">
                 <MessageCircle className="w-10 h-10 text-primary" />
               </div>
-              <h2 className="text-2xl font-bold">Sogni Hub WhatsApp</h2>
+              <h2 className="text-2xl font-bold">Nexus Hub WhatsApp</h2>
               <p className="text-muted-foreground max-w-sm">
                 Select a chat to start messaging your clients in real-time. All conversations are synced with your WhatsApp Business account.
               </p>

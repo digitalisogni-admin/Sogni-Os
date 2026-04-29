@@ -287,7 +287,7 @@ export function Inventory() {
             await addProduct(p);
           }
         }
-        toast.info(t('inventory_synced', 'Inventory synced with latest Sogni Digitali catalog'));
+        toast.info(t('inventory_synced', 'Inventory synced with latest Nexus Agency catalog'));
       };
       // Short delay to avoid race condition with initial Firebase fetch
       const timer = setTimeout(seed, 3000);
@@ -302,7 +302,7 @@ export function Inventory() {
         await addProduct(p);
       }
     }
-    toast.success('Inventory seeded with Sogni Digitali products');
+    toast.success('Inventory seeded with Nexus Agency products');
   };
 
   const handleAddProduct = async (e: FormEvent) => {
@@ -339,7 +339,7 @@ export function Inventory() {
               className="rounded-2xl border-primary/20 bg-primary/5 hover:bg-primary/10 h-12 px-6 text-primary font-bold"
             >
               <Sparkles className="w-4 h-4 mr-2" />
-              Seed Sogni Products
+              Seed Nexus Products
             </Button>
           )}
           <Button onClick={() => setIsInvoiceModalOpen(true)} variant="outline" className="rounded-2xl border-white/10 bg-white/5 hover:bg-white/10 h-12 px-6">

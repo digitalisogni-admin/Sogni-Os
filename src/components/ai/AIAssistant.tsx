@@ -46,10 +46,10 @@ export function AIAssistant() {
   useEffect(() => {
     if (messages.length === 0) {
       const welcomeMessage = i18n.language === 'it' 
-        ? 'Ciao! Sono il tuo assistente Sogni AI. Come posso aiutarti oggi?' 
+        ? 'Ciao! Sono il tuo assistente Nexus AI. Come posso aiutarti oggi?' 
         : i18n.language === 'fr'
-        ? 'Bonjour ! Je suis votre assistant Sogni AI. Comment puis-je vous aider aujourd\'hui ?'
-        : 'Hello! I am your Sogni AI Assistant. How can I help you manage your agency today?';
+        ? 'Bonjour ! Je suis votre assistant Nexus AI. Comment puis-je vous aider aujourd\'hui ?'
+        : 'Hello! I am your Nexus AI Assistant. How can I help you manage your agency today?';
       
       setMessages([{ role: 'model', text: welcomeMessage }]);
     }
@@ -93,7 +93,7 @@ export function AIAssistant() {
           userName: user?.displayName || user?.email
         };
 
-        const modelInstructions = `You are a highly intelligent, empathetic, and professional AI assistant for Sogni CRM, a luxury digital agency management platform. 
+        const modelInstructions = `You are a highly intelligent, empathetic, and professional AI assistant for Nexus CRM, a luxury digital agency management platform. 
           Your tone is "Cyber-Luxury": sophisticated, efficient, and warm. You speak like a high-end concierge or a senior partner in a digital agency.
           
           CRITICAL: You must respond in the user's current language: ${i18n.language === 'it' ? 'Italian' : i18n.language === 'fr' ? 'French' : 'English'}.
@@ -230,7 +230,7 @@ export function AIAssistant() {
                     activeTab === 'ai' ? "text-primary border-primary" : "text-muted-foreground border-transparent hover:text-foreground"
                   )}
                 >
-                  Sogni AI
+                  Nexus AI
                 </button>
                 <button
                   onClick={() => setActiveTab('chat')}
@@ -388,7 +388,7 @@ export function AIAssistant() {
                 </div>
               )}
               <p className="text-[9px] text-center text-muted-foreground mt-3 uppercase tracking-widest font-bold opacity-50">
-                {activeTab === 'ai' ? 'Powered by Sogni AI • Gemini 3.0' : 'Sogni Support Network • Encrypted'}
+                {activeTab === 'ai' ? 'Powered by Nexus AI • Gemini 3.0' : 'Nexus Support Network • Encrypted'}
               </p>
             </div>
           </motion.div>

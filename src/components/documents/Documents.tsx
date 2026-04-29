@@ -6,9 +6,7 @@ import { cn } from '@/lib/utils';
 import { motion } from 'motion/react';
 import { useDashboardStore } from '@/src/store';
 import React, { useState, useRef, useEffect } from 'react';
-import { storage, db, handleFirestoreError, OperationType } from '@/src/lib/firebase';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
-import { collection, addDoc, query, where, onSnapshot, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+// removed firebase imports
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { 
@@ -60,75 +58,55 @@ export function Documents() {
 
   useEffect(() => {
     if (!user) return;
-
-    const qFiles = isAdmin 
-      ? collection(db, 'documents') 
-      : query(collection(db, 'documents'), where('uid', '==', user.uid));
-
-    const unsubscribeFiles = onSnapshot(qFiles, (snapshot) => {
-      const docs = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as DocumentFile[];
-      setFiles(docs);
-    }, (err) => handleFirestoreError(err, OperationType.LIST, 'documents'));
-
-    const qFolders = isAdmin 
-      ? collection(db, 'folders') 
-      : query(collection(db, 'folders'), where('uid', '==', user.uid));
-
-    const unsubscribeFolders = onSnapshot(qFolders, (snapshot) => {
-      const docs = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as DocumentFolder[];
-      setFolders(docs);
-    }, (err) => handleFirestoreError(err, OperationType.LIST, 'folders'));
-
-    return () => {
-      unsubscribeFiles();
-      unsubscribeFolders();
-    };
-  }, [user, isAdmin]);
+    setFiles([
+      {
+        id: '1',
+        name: 'Project_Proposal_Final.pdf',
+        size: '2.4 MB',
+        url: '#',
+        type: 'pdf',
+        createdAt: new Date().toISOString(),
+        uid: user.uid,
+        folderId: '1'
+      }
+    ]);
+    setFolders([
+      {
+        id: '1',
+        name: 'Proposals',
+        color: 'text-primary',
+        uid: user.uid,
+        createdAt: new Date().toISOString()
+      }
+    ]);
+  }, [user]);
 
   const handleCreateOrUpdateFolder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
 
-    try {
-      if (editingFolder) {
-        await updateDoc(doc(db, 'folders', editingFolder.id), {
-          name: folderName,
-          color: folderColor
-        });
-        toast.success(t('folder_updated'));
-      } else {
-        await addDoc(collection(db, 'folders'), {
-          name: folderName,
-          color: folderColor,
-          uid: user.uid,
-          createdAt: new Date().toISOString()
-        });
-        toast.success(t('folder_created'));
-      }
-      setIsFolderModalOpen(false);
-      setEditingFolder(null);
-      setFolderName('');
-    } catch (error) {
-      console.error("Folder error:", error);
-      toast.error(t('failed_to_save_folder'));
+    if (editingFolder) {
+      setFolders(prev => prev.map(f => f.id === editingFolder.id ? { ...f, name: folderName, color: folderColor } : f));
+      toast.success(t('folder_updated'));
+    } else {
+      setFolders(prev => [...prev, {
+        id: Math.random().toString(),
+        name: folderName,
+        color: folderColor,
+        uid: user.uid,
+        createdAt: new Date().toISOString()
+      }]);
+      toast.success(t('folder_created'));
     }
+    setIsFolderModalOpen(false);
+    setEditingFolder(null);
+    setFolderName('');
   };
 
   const handleDeleteFolder = async (id: string) => {
     if (!confirm(t('confirm_delete_folder'))) return;
-    try {
-      await deleteDoc(doc(db, 'folders', id));
-      toast.success(t('folder_deleted'));
-    } catch (error) {
-      console.error("Delete folder error:", error);
-      toast.error(t('failed_to_delete_folder'));
-    }
+    setFolders(prev => prev.filter(f => f.id !== id));
+    toast.success(t('folder_deleted'));
   };
 
   const openEditFolder = (folder: DocumentFolder) => {
@@ -150,44 +128,26 @@ export function Documents() {
     if (!file || !user) return;
 
     setIsUploading(true);
-    try {
-      const storageRef = ref(storage, `documents/${user.uid}/${Date.now()}_${file.name}`);
-      const snapshot = await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(snapshot.ref);
-
-      await addDoc(collection(db, 'documents'), {
+    setTimeout(() => {
+      setFiles(prev => [...prev, {
+        id: Math.random().toString(),
         name: file.name,
         size: `${(file.size / (1024 * 1024)).toFixed(2)} MB`,
-        url,
+        url: '#',
         type: file.type.split('/')[1] || 'file',
         createdAt: new Date().toISOString(),
-        uid: user.uid,
-        storagePath: storageRef.fullPath
-      });
-
+        uid: user.uid
+      }]);
       toast.success('File uploaded successfully');
-    } catch (error) {
-      console.error("Upload error:", error);
-      toast.error('Failed to upload file');
-    } finally {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
-    }
+    }, 1500);
   };
 
   const handleDelete = async (file: DocumentFile) => {
     if (!confirm(t('confirm_delete_file'))) return;
-    try {
-      if (file.storagePath) {
-        const storageRef = ref(storage, file.storagePath);
-        await deleteObject(storageRef);
-      }
-      await deleteDoc(doc(db, 'documents', file.id));
-      toast.success(t('file_deleted'));
-    } catch (error) {
-      console.error("Delete error:", error);
-      toast.error(t('failed_to_delete_file'));
-    }
+    setFiles(prev => prev.filter(f => f.id !== file.id));
+    toast.success(t('file_deleted'));
   };
 
   const totalStorageUsed = files.reduce((sum, file) => {

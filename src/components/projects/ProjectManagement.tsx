@@ -362,7 +362,7 @@ export function ProjectManagement() {
             <DialogTitle>{t('edit_project')}</DialogTitle>
           </DialogHeader>
           {editingProject && (
-            <form onSubmit={handleEditProject} className="space-y-6 py-4">
+            <form key={editingProject.id} onSubmit={handleEditProject} className="space-y-6 py-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-4">
                   <div className="space-y-2">

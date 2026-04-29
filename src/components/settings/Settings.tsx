@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { Settings as SettingsIcon, Zap, ChevronRight, Layout, Mail, MousePointerClick, Copy, Check, ExternalLink, Trash2, Lock, Fingerprint, Shield, Webhook, Save, User, Bell, Globe, MessageCircle, Sparkles, Cookie, Activity } from 'lucide-react';
+import { Settings as SettingsIcon, Zap, ChevronRight, Layout, Mail, MousePointerClick, Copy, Check, ExternalLink, Trash2, Lock, Fingerprint, Shield, Webhook, Save, User, Bell, Globe, MessageCircle, Sparkles, Cookie, Activity, FileText } from 'lucide-react';
 import { FormEvent, useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
@@ -44,7 +44,7 @@ export function Settings() {
   }, [fontTheme]);
 
   const firebaseUid = user?.uid || "efrnC5pxl3ZF8zhcOxUPPH1hWaI3"; // Use real UID
-  const userEmail = user?.email || "digitalisogni@gmail.com";
+  const userEmail = user?.email || "admin@mockagency.com";
 
   const handleConnectGmail = async () => {
     if (!user?.uid) return;
@@ -79,14 +79,14 @@ export function Settings() {
 
   const copySnippet = () => {
     const snippet = `
-<!-- Sogni Hub Lead Capture -->
+<!-- Nexus Hub Lead Capture -->
 <script>
-  window.SOGNI_HUB_CONFIG = {
+  window.NEXUS_HUB_CONFIG = {
     apiKey: "${apiKey}",
     endpoint: "${window.location.origin}/api/leads/capture"
   };
 </script>
-<script src="https://cdn.jsdelivr.net/gh/digitalisogni/sogni-hub-lead-capture@main/dist/capture.js" async></script>
+<script src="https://cdn.jsdelivr.net/gh/mockuser/nexus-hub-lead-capture@main/dist/capture.js" async></script>
     `.trim();
     navigator.clipboard.writeText(snippet);
     setCopied(true);
@@ -104,6 +104,16 @@ export function Settings() {
       zapier: formData.get('zapier') as string,
     });
     toast.success(t('save_configuration'));
+  };
+
+  const googleSheetId = useDashboardStore(state => state.googleSheetId);
+  const setGoogleSheetId = useDashboardStore(state => state.setGoogleSheetId);
+
+  const handleSaveSheets = (e: FormEvent) => {
+    e.preventDefault();
+    const formData = new FormData(e.target as HTMLFormElement);
+    setGoogleSheetId(formData.get('sheetsUrl') as string);
+    toast.success('Google Sheets CSV settings saved!');
   };
 
   const sections = [
@@ -184,7 +194,7 @@ export function Settings() {
                 <CardContent>
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-2xl font-bold">Sogni Agency</p>
+                      <p className="text-2xl font-bold">Nexus Agency</p>
                       <p className="text-sm text-primary font-bold">{t('enterprise_ai_plan')}</p>
                     </div>
                     <div className="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center">
@@ -256,7 +266,7 @@ export function Settings() {
                   </div>
                   <div>
                     <CardTitle>{t('theme_personalization', 'Theme Personalization')}</CardTitle>
-                    <CardDescription>{t('customize_os_look', 'Customize the look and feel of the SOGNI OS.')}</CardDescription>
+                    <CardDescription>{t('customize_os_look', 'Customize the look and feel of the Nexus OS.')}</CardDescription>
                   </div>
                 </div>
               </CardHeader>
@@ -428,6 +438,35 @@ export function Settings() {
             <Card className="bg-card border-border text-foreground shadow-2xl rounded-3xl overflow-hidden">
               <CardHeader>
                 <CardTitle className="text-lg font-bold flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-green-500" />
+                  Google Sheets Native Sync
+                </CardTitle>
+                <CardDescription>
+                  In your Google Sheet, go to File {'>'} Share {'>'} "Publish to Web". Select "Comma-separated values (.csv)" and paste the generated link here.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSaveSheets} className="space-y-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="sheetsUrl" className="text-xs font-bold uppercase text-muted-foreground">Google Sheets CSV Web Link</Label>
+                    <Input 
+                      id="sheetsUrl" 
+                      name="sheetsUrl" 
+                      defaultValue={googleSheetId} 
+                      placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?output=csv" 
+                      className="bg-white/5 border-none rounded-xl h-12 focus-visible:ring-1 focus-visible:ring-primary"
+                    />
+                  </div>
+                  <Button type="submit" className="bg-green-500 hover:bg-green-600 text-white rounded-xl w-full h-12 font-bold shadow-[0_0_20px_rgba(34,197,94,0.3)]">
+                    <Save className="w-4 h-4 mr-2" /> Save CSV Sync Link
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-card border-border text-foreground shadow-2xl rounded-3xl overflow-hidden">
+              <CardHeader>
+                <CardTitle className="text-lg font-bold flex items-center gap-2">
                   <Globe className="w-5 h-5 text-primary" />
                   {t('external_integrations')}
                 </CardTitle>
@@ -575,15 +614,15 @@ export function Settings() {
                     <Label className="text-xs font-bold uppercase text-muted-foreground">Code Snippet</Label>
                     <div className="relative group">
                       <pre className="p-4 rounded-2xl bg-black/40 border border-border text-[10px] font-mono overflow-x-auto text-primary/80">
-{`<!-- Sogni Hub Lead Capture -->
+{`<!-- Nexus Hub Lead Capture -->
 <script>
-  window.SOGNI_HUB_CONFIG = {
+  window.NEXUS_HUB_CONFIG = {
     apiKey: "${apiKey || 'YOUR_CRM_API_KEY'}",
     endpoint: "${window.location.host === 'localhost:3000' ? 'http://localhost:3000' : window.location.origin}/api/leads/capture",
     collectCookies: ${cookieConfig.enabled}
   };
 </script>
-<script src="https://cdn.jsdelivr.net/gh/digitalisogni/sogni-hub-lead-capture@main/dist/capture.js" async></script>`}
+<script src="https://cdn.jsdelivr.net/gh/mockuser/nexus-hub-lead-capture@main/dist/capture.js" async></script>`}
                       </pre>
                       <Button 
                         size="icon"
@@ -627,7 +666,7 @@ export function Settings() {
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({
                             name: "Test Diagnostic",
-                            email: "diagnostic@sogni.os",
+                            email: "diagnostic@nexus.os",
                             phone: "+1 234 567 890",
                             source: "Diagnostic Tool",
                             apiKey: apiKey,
