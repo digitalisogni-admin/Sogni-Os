@@ -28,6 +28,8 @@ import {
   Vault,
   ShieldCheck,
   Inbox,
+  Menu,
+  X,
   MessageCircle,
   Sparkles
 } from 'lucide-react';
@@ -111,6 +113,7 @@ const navItems = [
 export function DashboardLayout({ children, activeTab, setActiveTab }: LayoutProps) {
   const { t, i18n } = useTranslation();
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const { theme, toggleTheme, userRole, setUserRole, user, logout, notifications, markNotificationRead, isGlassMode } = useDashboardStore();
@@ -195,39 +198,64 @@ export function DashboardLayout({ children, activeTab, setActiveTab }: LayoutPro
         <div className="liquid-blob bottom-[10%] right-[10%] [animation-delay:5s] opacity-10" />
       </div>
       <div 
-        className="fixed left-0 top-0 bottom-0 w-4 z-50"
+        className="fixed left-0 top-0 bottom-0 w-4 z-50 hidden md:block"
         onMouseEnter={() => setIsSidebarExpanded(true)}
       />
+
+      {/* Mobile Sidebar Overlay */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 md:hidden"
+          />
+        )}
+      </AnimatePresence>
 
       {/* Sidebar */}
       <motion.aside 
         ref={sidebarRef}
         initial={false}
-        animate={{ width: isSidebarExpanded ? 280 : 80 }}
-        onMouseLeave={() => setIsSidebarExpanded(false)}
-        className="relative z-40 bg-card border-r border-border flex flex-col overflow-hidden shadow-[20px_0_50_rgba(0,0,0,0.5)]"
+        animate={{ width: isMobileMenuOpen ? 280 : (isSidebarExpanded ? 280 : 80) }}
+        onMouseLeave={() => {
+          if (!isMobileMenuOpen) setIsSidebarExpanded(false)
+        }}
+        className={cn(
+          "fixed md:relative z-50 h-screen bg-card border-r border-border flex flex-col overflow-hidden shadow-[20px_0_50_rgba(0,0,0,0.5)] transition-transform duration-300",
+          !isMobileMenuOpen && "-translate-x-full md:translate-x-0"
+        )}
       >
-        <div className="p-6 flex items-center gap-4 h-20 shrink-0">
-          <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center shrink-0 shadow-[0_0_20px_rgba(0,255,255,0.1)] overflow-hidden">
-            <ShieldCheck className="w-6 h-6 text-primary animate-pulse" />
+        <div className="p-6 flex items-center justify-between gap-4 h-20 shrink-0">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center shrink-0 shadow-[0_0_20px_rgba(0,255,255,0.1)] overflow-hidden">
+              <ShieldCheck className="w-6 h-6 text-primary animate-pulse" />
+            </div>
+            <AnimatePresence>
+              {(isSidebarExpanded || isMobileMenuOpen) && (
+                <motion.div 
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  className="flex flex-col"
+                >
+                  <span className="font-black text-xl tracking-[0.2em] whitespace-nowrap shimmer-text font-heading">
+                    NEXUS CRM
+                  </span>
+                  <span className="text-[8px] font-bold tracking-[0.4em] uppercase text-muted-foreground/60 -mt-1 ml-0.5">
+                    Intelligence v1
+                  </span>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
-          <AnimatePresence>
-            {isSidebarExpanded && (
-              <motion.div 
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-                className="flex flex-col"
-              >
-                <span className="font-black text-xl tracking-[0.2em] whitespace-nowrap shimmer-text font-heading">
-                  NEXUS CRM
-                </span>
-                <span className="text-[8px] font-bold tracking-[0.4em] uppercase text-muted-foreground/60 -mt-1 ml-0.5">
-                  Intelligence v1
-                </span>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {isMobileMenuOpen && (
+            <button onClick={() => setIsMobileMenuOpen(false)} className="md:hidden p-2 text-muted-foreground hover:text-foreground">
+              <X className="w-5 h-5" />
+            </button>
+          )}
         </div>
 
         <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto no-scrollbar">
@@ -257,7 +285,7 @@ export function DashboardLayout({ children, activeTab, setActiveTab }: LayoutPro
                 >
                   <item.icon className={cn("w-6 h-6 shrink-0 transition-colors", isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground")} />
                   <AnimatePresence>
-                    {isSidebarExpanded && (
+                    {(isSidebarExpanded || isMobileMenuOpen) && (
                       <motion.div
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
@@ -281,7 +309,7 @@ export function DashboardLayout({ children, activeTab, setActiveTab }: LayoutPro
 
                 {/* Sub Items */}
                 <AnimatePresence>
-                  {isExpanded && isSidebarExpanded && item.subItems && (
+                  {isExpanded && (isSidebarExpanded || isMobileMenuOpen) && item.subItems && (
                     <motion.div
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: 'auto', opacity: 1 }}
@@ -314,9 +342,9 @@ export function DashboardLayout({ children, activeTab, setActiveTab }: LayoutPro
         <div className="p-4 mt-auto border-t border-border">
           <div className={cn(
             "bg-white/5 rounded-2xl p-4 transition-all duration-300",
-            !isSidebarExpanded && "p-2 flex justify-center"
+            (!isSidebarExpanded && !isMobileMenuOpen) && "p-2 flex justify-center"
           )}>
-            {isSidebarExpanded ? (
+            {(isSidebarExpanded || isMobileMenuOpen) ? (
               <>
                 <p className="text-xs font-semibold text-foreground mb-1">Cyber-Luxury v2.0</p>
                 <p className="text-[10px] text-muted-foreground">Premium Agency Dashboard</p>
@@ -329,18 +357,26 @@ export function DashboardLayout({ children, activeTab, setActiveTab }: LayoutPro
       </motion.aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-hidden bg-background">
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-background">
         {/* Header */}
-        <header className="h-20 bg-card/80 backdrop-blur-xl border-b border-border flex items-center justify-between px-8 shrink-0 z-30">
-          <div className="relative w-96">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input 
-              placeholder={t('search_anything')} 
-              className="pl-12 bg-white/5 border-none rounded-2xl h-12 text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-primary transition-all"
-            />
+        <header className="h-20 bg-card/80 backdrop-blur-xl border-b border-border flex items-center justify-between px-4 md:px-8 shrink-0 z-30">
+          <div className="flex items-center gap-4 flex-1">
+            <button 
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="md:hidden p-2 text-muted-foreground hover:text-foreground transition-all bg-white/5 rounded-xl hover:bg-white/10"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <div className="relative w-full max-w-sm hidden sm:block">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input 
+                placeholder={t('search_anything')} 
+                className="pl-12 bg-white/5 border-none rounded-2xl h-11 md:h-12 text-sm md:text-base text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-primary transition-all"
+              />
+            </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 md:gap-4 shrink-0">
             {/* Language Switcher */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -429,7 +465,7 @@ export function DashboardLayout({ children, activeTab, setActiveTab }: LayoutPro
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button className="flex items-center gap-2 hover:opacity-80 transition-opacity outline-none">
-                    <Avatar className="w-12 h-12 border-2 border-border shadow-lg">
+                    <Avatar className="w-10 h-10 md:w-12 md:h-12 border-2 border-border shadow-lg">
                       <AvatarImage src={user?.photoURL || "https://picsum.photos/seed/katie/100/100"} />
                       <AvatarFallback className="bg-primary text-primary-foreground">
                         {user?.displayName?.split(' ').map(n => n[0]).join('') || 'U'}
@@ -488,7 +524,7 @@ export function DashboardLayout({ children, activeTab, setActiveTab }: LayoutPro
         </header>
 
         {/* Scrollable Area */}
-        <div className="flex-1 overflow-y-auto p-8 no-scrollbar">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 no-scrollbar">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>
